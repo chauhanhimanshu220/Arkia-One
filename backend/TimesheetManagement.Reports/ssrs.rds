@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RptDataSource xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Name="ssrs">
+  <ConnectionProperties>
+    <Extension>SQL</Extension>
+    <ConnectString></ConnectString>
+    <IntegratedSecurity>true</IntegratedSecurity>
+  </ConnectionProperties>
+  <DataSourceID>a0d1c64c-46c7-4c63-8adf-8672f35c7f60</DataSourceID>
+</RptDataSource>

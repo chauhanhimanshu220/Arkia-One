@@ -1,0 +1,20 @@
+# Node/Vite (frontend and backend-node)
+node_modules/
+dist/
+.vite/
+.env
+
+# .NET (backend)
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.lscache
+
+# Tooling/Local SDK
+.tools/
+
+# Logs
+*.log
+run-logs/

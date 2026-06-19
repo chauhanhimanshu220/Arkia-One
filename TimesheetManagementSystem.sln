@@ -1,0 +1,32 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "backend", "backend", "{1AE8ACA6-933B-BF2A-3671-3E2EAC007D16}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TimesheetManagement.Api", "TimesheetManagement.Api", "{26CE3664-6F6A-3EC3-B77B-3486639707D0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TimesheetManagement.Api", "backend\TimesheetManagement.Api\TimesheetManagement.Api.csproj", "{D7E5CABB-8D22-7CE4-5708-AD8056FD3ADC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D7E5CABB-8D22-7CE4-5708-AD8056FD3ADC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D7E5CABB-8D22-7CE4-5708-AD8056FD3ADC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D7E5CABB-8D22-7CE4-5708-AD8056FD3ADC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D7E5CABB-8D22-7CE4-5708-AD8056FD3ADC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{26CE3664-6F6A-3EC3-B77B-3486639707D0} = {1AE8ACA6-933B-BF2A-3671-3E2EAC007D16}
+		{D7E5CABB-8D22-7CE4-5708-AD8056FD3ADC} = {26CE3664-6F6A-3EC3-B77B-3486639707D0}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {225A7D95-06D7-4140-B59E-63700E89D67F}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SharedDataSet xmlns="http://schemas.microsoft.com/sqlserver/reporting/2010/01/shareddatasetdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <DataSet Name="PayrollExportSummary">
+    <Query>
+      <DataSourceReference>ssrs</DataSourceReference>
+      <DataSetParameters>
+        <DataSetParameter Name="@StartDate">
+          <ReadOnly>false</ReadOnly>
+          <Nullable>false</Nullable>
+          <OmitFromQuery>false</OmitFromQuery>
+          <rd:DbType>Object</rd:DbType>
+        </DataSetParameter>
+        <DataSetParameter Name="@EndDate">
+          <ReadOnly>false</ReadOnly>
+          <Nullable>false</Nullable>
+          <OmitFromQuery>false</OmitFromQuery>
+          <rd:DbType>Object</rd:DbType>
+        </DataSetParameter>
+        <DataSetParameter Name="@StatusFilter">
+          <ReadOnly>false</ReadOnly>
+          <Nullable>false</Nullable>
+          <OmitFromQuery>false</OmitFromQuery>
+          <rd:DbType>Object</rd:DbType>
+        </DataSetParameter>
+        <DataSetParameter Name="@EmployeeFilter">
+          <ReadOnly>false</ReadOnly>
+          <Nullable>false</Nullable>
+          <OmitFromQuery>false</OmitFromQuery>
+          <rd:DbType>Object</rd:DbType>
+        </DataSetParameter>
+        <DataSetParameter Name="@BillableFilter">
+          <ReadOnly>false</ReadOnly>
+          <Nullable>false</Nullable>
+          <OmitFromQuery>false</OmitFromQuery>
+          <rd:DbType>Object</rd:DbType>
+        </DataSetParameter>
+        <DataSetParameter Name="@SearchTerm">
+          <ReadOnly>false</ReadOnly>
+          <Nullable>true</Nullable>
+          <OmitFromQuery>false</OmitFromQuery>
+          <rd:DbType>Object</rd:DbType>
+        </DataSetParameter>
+      </DataSetParameters>
+      <CommandText>WITH PayrollDetail AS (
+    SELECT
+        wt.Id AS WeeklyTimesheetId,
+        wt.UserId,
+        employee.EmployeeCode,
+        employee.FullName AS EmployeeName,
+        employee.Email AS EmployeeEmail,
+        employee.Department,
+        employee.Designation,
+        wt.Status AS TimesheetStatus,
+        wt.WeekStart,
+        wt.WeekEnd,
+        wt.UpdatedAtUtc,
+        rowData.ProjectId,
+        COALESCE(NULLIF(rowData.ProjectName, N''), project.Name, N'Unassigned') AS ProjectName,
+        project.Code AS ProjectCode,
+        project.ClientBusinessUnit,
+        COALESCE(NULLIF(LTRIM(RTRIM(rowData.TaskName)), N''), N'No task name') AS TaskName,
+        CASE WHEN rowData.Billable = 1 THEN N'Billable' ELSE N'Non-billable' END AS BillableLabel,
+        CAST(rowData.Billable AS bit) AS IsBillable,
+        TRY_CONVERT(date, hours.[key]) AS EntryDate,
+        TRY_CONVERT(float, hours.value) AS EntryHours,
+        COALESCE(NULLIF(JSON_VALUE(rowData.NotesByDateJson, CONCAT('$."', hours.[key], '"')), N''), NULLIF(rowData.Notes, N''), N'-') AS EntryNote
+    FROM WeeklyTimesheets wt
+    LEFT JOIN Employees employee ON employee.Id = wt.UserId
+    CROSS APPLY OPENJSON(wt.RowsJson)
+    WITH (
+        ProjectId uniqueidentifier '$.projectId',
+        ProjectName nvarchar(200) '$.projectName',
+        TaskName nvarchar(200) '$.taskName',
+        Notes nvarchar(max) '$.notes',
+        NotesByDateJson nvarchar(max) '$.notesByDate' AS JSON,
+        Billable bit '$.billable',
+        HoursJson nvarchar(max) '$.hours' AS JSON
+    ) rowData
+    CROSS APPLY OPENJSON(rowData.HoursJson) hours
+    LEFT JOIN Projects project ON project.Id = rowData.ProjectId
+),
+FilteredDetail AS (
+    SELECT *
+    FROM PayrollDetail
+    WHERE EntryDate IS NOT NULL
+      AND EntryHours IS NOT NULL
+      AND EntryHours &gt; 0
+      AND (@StartDate IS NULL OR EntryDate &gt;= @StartDate)
+      AND (@EndDate IS NULL OR EntryDate &lt;= @EndDate)
+      AND (@StatusFilter IS NULL OR @StatusFilter = N'' OR @StatusFilter = N'All' OR TimesheetStatus = @StatusFilter)
+      AND (@EmployeeFilter IS NULL OR @EmployeeFilter = N'' OR @EmployeeFilter = N'All' OR EmployeeEmail = @EmployeeFilter OR EmployeeName = @EmployeeFilter)
+      AND (@BillableFilter IS NULL OR @BillableFilter = N'' OR @BillableFilter = N'All'
+           OR (@BillableFilter = N'Billable' AND IsBillable = 1)
+           OR (@BillableFilter = N'Non-billable' AND IsBillable = 0))
+      AND (@SearchTerm IS NULL OR LTRIM(RTRIM(@SearchTerm)) = N''
+           OR (CONCAT(ISNULL(EmployeeName,N''), N' ', ISNULL(EmployeeEmail,N''), N' ', ISNULL(ProjectName,N''), N' ', ISNULL(TaskName,N''), N' ', ISNULL(EntryNote,N'')) COLLATE DATABASE_DEFAULT)
+              LIKE ((N'%' + LTRIM(RTRIM(@SearchTerm)) + N'%') COLLATE DATABASE_DEFAULT))
+)
+SELECT
+    COUNT(*) AS VisibleEntries,
+    CAST(SUM(EntryHours) AS decimal(10,2)) AS VisibleHours,
+    COUNT(DISTINCT COALESCE(NULLIF(EmployeeEmail, N''), EmployeeName)) AS Employees,
+    SUM(CASE WHEN TimesheetStatus = N'Submitted' THEN 1 ELSE 0 END) AS SubmittedRows,
+    COUNT(DISTINCT ProjectName) AS Projects,
+    CAST(MIN(EntryDate) AS datetime) AS RangeStart,
+    CAST(MAX(EntryDate) AS datetime) AS RangeEnd
+FROM FilteredDetail;</CommandText>
+    </Query>
+    <Fields>
+      <Field Name="VisibleEntries">
+        <DataField>VisibleEntries</DataField>
+        <rd:TypeName>System.Int32</rd:TypeName>
+      </Field>
+      <Field Name="VisibleHours">
+        <DataField>VisibleHours</DataField>
+        <rd:TypeName>System.Decimal</rd:TypeName>
+      </Field>
+      <Field Name="Employees">
+        <DataField>Employees</DataField>
+        <rd:TypeName>System.Int32</rd:TypeName>
+      </Field>
+      <Field Name="SubmittedRows">
+        <DataField>SubmittedRows</DataField>
+        <rd:TypeName>System.Int32</rd:TypeName>
+      </Field>
+      <Field Name="Projects">
+        <DataField>Projects</DataField>
+        <rd:TypeName>System.Int32</rd:TypeName>
+      </Field>
+      <Field Name="RangeStart">
+        <DataField>RangeStart</DataField>
+        <rd:TypeName>System.DateTime</rd:TypeName>
+      </Field>
+      <Field Name="RangeEnd">
+        <DataField>RangeEnd</DataField>
+        <rd:TypeName>System.DateTime</rd:TypeName>
+      </Field>
+    </Fields>
+  </DataSet>
+</SharedDataSet>
