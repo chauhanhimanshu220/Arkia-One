@@ -494,10 +494,10 @@ public sealed class ConsoleController(
             return (BadRequest(new { message = $"Gender must be one of: {string.Join(", ", AllowedGenders)}." }), null);
         }
 
-        var normalizedDepartment = request.Department?.Trim() ?? string.Empty;
+        var normalizedDepartment = request.Department?.Trim();
         if (string.IsNullOrWhiteSpace(normalizedDepartment))
         {
-            return (BadRequest(new { message = "Department is required." }), null);
+            normalizedDepartment = "IT & Administration";
         }
 
         var department = await dbContext.Departments
@@ -506,10 +506,7 @@ public sealed class ConsoleController(
                 item.Status == "Active" &&
                 item.Name.ToLower() == normalizedDepartment.ToLower());
 
-        if (department is null)
-        {
-            return (BadRequest(new { message = "Select a valid active department." }), null);
-        }
+        var finalDepartment = department?.Name ?? normalizedDepartment;
 
         var designation = request.Designation?.Trim() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(designation))
@@ -584,7 +581,7 @@ public sealed class ConsoleController(
             mobileNumber,
             dateOfBirth,
             gender,
-            department.Name,
+            finalDepartment,
             designation,
             reportingManagerId,
             businessUnit,
