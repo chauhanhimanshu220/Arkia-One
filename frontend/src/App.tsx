@@ -176,7 +176,7 @@ function App() {
     );
   }
 
-  if (session.user.account_type === 'super_admin' || session.user.role === 'super_admin') {
+  if (session.user.account_type === 'super_admin' || (session.user.role as string) === 'super_admin') {
     return <Navigate to="/management/dashboard" replace />;
   }
 

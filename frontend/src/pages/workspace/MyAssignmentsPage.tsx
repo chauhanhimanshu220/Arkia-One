@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Icon, type IconName } from "../../components/Icon";
 import { LoadingSpinner } from "../../components/LoadingSpinner";
-import { StatCard } from "../../components/StatCard";
 import { WorkspaceHeroMeta, WorkspacePageHero } from "../../components/WorkspacePageHero";
 import { useProjects } from "../../hooks/useProjects";
 import { taskService } from "../../services/taskService";
@@ -40,13 +39,13 @@ const tabs: Array<{ id: Tab; label: string; icon: IconName }> = [
 ];
 
 const statusClasses: Record<TaskStatus | Project["status"], string> = {
-  "To Do": "bg-zinc-100 text-zinc-700 dark:bg-zinc-900 dark:text-zinc-200",
-  Planned: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-200",
-  "In Progress": "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-200",
-  "On Hold": "bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-200",
-  Completed: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200",
-  Active: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200",
-  Pending: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-200",
+  "To Do": "border border-zinc-200/50 bg-zinc-50 text-zinc-600 dark:border-zinc-700/30 dark:bg-zinc-800/20 dark:text-zinc-400",
+  Planned: "border border-amber-200/40 bg-amber-50/50 text-amber-600 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-400",
+  "In Progress": "border border-sky-200/40 bg-sky-50/50 text-sky-600 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-400",
+  "On Hold": "border border-orange-200/40 bg-orange-50/50 text-orange-600 dark:border-orange-500/20 dark:bg-orange-500/10 dark:text-orange-400",
+  Completed: "border border-emerald-200/40 bg-emerald-50/50 text-emerald-600 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400",
+  Active: "border border-emerald-200/40 bg-emerald-50/50 text-emerald-600 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400",
+  Pending: "border border-amber-200/40 bg-amber-50/50 text-amber-600 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-400",
 };
 
 const priorityDotClasses: Record<Priority, string> = {
@@ -64,8 +63,8 @@ const activityToneClasses: Record<ActivityEvent["tone"], string> = {
   zinc: "bg-zinc-100 text-zinc-700 dark:bg-zinc-900 dark:text-zinc-200",
 };
 
-const panelClass = "rounded-3xl border border-white/70 bg-white/90 shadow-panel backdrop-blur-xl dark:border-zinc-800 dark:bg-black/80";
-const compactPanelClass = "rounded-2xl border border-zinc-200 bg-zinc-50/50 backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-950/50";
+const panelClass = "panel-premium";
+const compactPanelClass = "compact-panel-premium";
 
 const classNames = (...values: Array<string | false | null | undefined>) => values.filter(Boolean).join(" ");
 
@@ -162,7 +161,7 @@ const buildDocuments = (projects: Project[], tasks: TaskItem[]): ProjectDocument
     if (!task.expectedDeliverable?.trim() && !task.workBreakdown?.trim()) return;
     docs.push({
       id: `${task.id}-deliverable`,
-      projectId: task.projectId,
+      projectId: task.projectId || "",
       name: task.expectedDeliverable?.trim() || `${task.title} work breakdown`,
       type: task.expectedDeliverable?.trim() ? "Deliverable" : "Work Plan",
       source: task.title || "Assigned task",
@@ -176,7 +175,7 @@ const buildDocuments = (projects: Project[], tasks: TaskItem[]): ProjectDocument
 const buildActivity = (projects: Project[], tasks: TaskItem[]): ActivityEvent[] => {
   const assignmentEvents = tasks.slice(0, 10).map((task) => ({
     id: `task-${task.id}`,
-    projectId: task.projectId,
+    projectId: task.projectId || "",
     title: task.title || task.taskName || "Assigned task",
     description: `${normalizeTaskStatus(task.status)} task in ${task.projectName || "project workspace"}`,
     when: formatRelativeDue(taskDueDate(task)),
@@ -207,27 +206,114 @@ function EmptyState({ title, description }: { title: string; description: string
   );
 }
 
-function ProgressBar({ value, tone = "bg-zinc-900 dark:bg-white" }: { value: number; tone?: string }) {
+function ProgressBar({ value, tone }: { value: number; tone?: "sky" | "amber" | "emerald" | "rose" | string }) {
   const clamped = Math.max(0, Math.min(100, Math.round(value)));
+  let fillClass = "progress-fill-premium";
+  if (tone === "emerald") fillClass = "progress-fill-premium progress-fill-emerald";
+  else if (tone === "rose") fillClass = "progress-fill-premium progress-fill-rose";
+  else if (tone === "amber") fillClass = "progress-fill-premium progress-fill-amber";
+  else if (tone === "sky") fillClass = "progress-fill-premium progress-fill-sky";
+  else if (typeof tone === "string" && tone.includes("bg-")) fillClass = `progress-fill-premium ${tone}`;
+
   return (
     <div className="progress-bar-premium">
-      <div className={classNames("progress-fill-premium", tone)} style={{ width: `${clamped}%` }} />
+      <div className={fillClass} style={{ width: `${clamped}%` }} />
     </div>
   );
 }
 
 function TaskStatusBadge({ status }: { status: string }) {
   const normalized = normalizeTaskStatus(status);
-  return <span className={`inline-flex rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${statusClasses[normalized]}`}>{normalized}</span>;
+  return <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider ${statusClasses[normalized]}`}>{normalized}</span>;
 }
 
 function PriorityBadge({ priority }: { priority?: string | null }) {
   const normalized = normalizePriority(priority);
+  
+  const pillClasses: Record<Priority, string> = {
+    Low: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800/40 dark:text-zinc-400 border-zinc-200/50 dark:border-zinc-700/30",
+    Medium: "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400 border-amber-200/40 dark:border-amber-500/20",
+    High: "bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400 border-rose-200/40 dark:border-rose-500/20",
+    Critical: "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400 border-red-200/40 dark:border-red-500/20",
+  };
+
+  const glowClasses: Record<Priority, string> = {
+    Low: "shadow-sm",
+    Medium: "shadow-[0_0_10px_rgba(245,158,11,0.15)]",
+    High: "shadow-[0_0_12px_rgba(244,63,94,0.2)]",
+    Critical: "shadow-[0_0_15px_rgba(239,68,68,0.25)] animate-pulse",
+  };
+
   return (
-    <span className="inline-flex items-center gap-2 text-xs font-bold text-zinc-700 dark:text-zinc-300">
-      <span className={`h-2.5 w-2.5 rounded-full ${priorityDotClasses[normalized]} shadow-sm`} />
+    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider ${pillClasses[normalized]} ${glowClasses[normalized]}`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${priorityDotClasses[normalized]}`} />
       {normalized}
     </span>
+  );
+}
+
+function CinematicStatCard({
+  label,
+  value,
+  subtitle,
+  icon,
+  color,
+}: {
+  label: string;
+  value: number;
+  subtitle?: string;
+  icon: IconName;
+  color: "sky" | "amber" | "emerald" | "rose";
+}) {
+  const themeColors = {
+    sky: {
+      border: "border-sky-500/30 dark:border-sky-400/20",
+      bgGlow: "bg-sky-500/5",
+      iconBg: "bg-sky-500/10 text-sky-600 dark:text-sky-400",
+      text: "text-sky-600 dark:text-sky-400",
+      glow: "hover:shadow-[0_0_30px_-5px_rgba(56,189,248,0.2)]",
+    },
+    amber: {
+      border: "border-amber-500/30 dark:border-amber-400/20",
+      bgGlow: "bg-amber-500/5",
+      iconBg: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+      text: "text-amber-600 dark:text-amber-400",
+      glow: "hover:shadow-[0_0_30px_-5px_rgba(251,191,36,0.2)]",
+    },
+    emerald: {
+      border: "border-emerald-500/30 dark:border-emerald-400/20",
+      bgGlow: "bg-emerald-500/5",
+      iconBg: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+      text: "text-emerald-600 dark:text-emerald-400",
+      glow: "hover:shadow-[0_0_30px_-5px_rgba(52,211,153,0.2)]",
+    },
+    rose: {
+      border: "border-rose-500/30 dark:border-rose-400/20",
+      bgGlow: "bg-rose-500/5",
+      iconBg: "bg-rose-500/10 text-rose-600 dark:text-rose-400",
+      text: "text-rose-600 dark:text-rose-400",
+      glow: "hover:shadow-[0_0_30px_-5px_rgba(251,113,133,0.2)]",
+    },
+  };
+
+  const selected = themeColors[color];
+
+  return (
+    <div className={`relative overflow-hidden rounded-[2rem] border ${selected.border} bg-white/70 dark:bg-zinc-950/40 p-6 backdrop-blur-xl shadow-sm transition-all duration-300 hover:-translate-y-1 ${selected.glow} flex flex-col justify-between h-36`}>
+      <div className={`absolute -right-4 -top-4 w-16 h-16 rounded-full filter blur-xl ${selected.bgGlow}`} />
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">{label}</p>
+          <p className="mt-3 text-4xl font-extrabold tracking-tight text-zinc-900 dark:text-white">{value}</p>
+        </div>
+        <div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${selected.iconBg} backdrop-blur-md`}>
+          <Icon name={icon} className="h-5 w-5" />
+        </div>
+      </div>
+      {subtitle ? (
+        <p className="text-xs font-medium text-zinc-400 dark:text-zinc-500">{subtitle}</p>
+      ) : null}
+    </div>
   );
 }
 
@@ -401,10 +487,10 @@ function OverviewTab({
     <div className="grid gap-8 xl:grid-cols-[1fr_360px]">
       <div className="space-y-8">
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard label="Assigned Projects" value={projects.length} subtitle={`${activeProjects.length} active`} accent="bg-sky-500/20" />
-          <StatCard label="Open Tasks" value={tasks.filter((task) => normalizeTaskStatus(task.status) !== "Completed").length} subtitle="Current backlog" accent="bg-amber-500/20" />
-          <StatCard label="Total Impact" value={tasks.filter((task) => normalizeTaskStatus(task.status) === "Completed").length} subtitle="Tasks completed" accent="bg-emerald-500/20" />
-          <StatCard label="Critical Risk" value={tasks.filter(isOverdue).length} subtitle="Overdue items" accent="bg-rose-500/20" />
+          <CinematicStatCard label="Assigned Projects" value={projects.length} subtitle={`${activeProjects.length} active`} icon="projects" color="sky" />
+          <CinematicStatCard label="Open Tasks" value={tasks.filter((task) => normalizeTaskStatus(task.status) !== "Completed").length} subtitle="Current backlog" icon="inbox" color="amber" />
+          <CinematicStatCard label="Total Impact" value={tasks.filter((task) => normalizeTaskStatus(task.status) === "Completed").length} subtitle="Tasks completed" icon="shield" color="emerald" />
+          <CinematicStatCard label="Critical Risk" value={tasks.filter(isOverdue).length} subtitle="Overdue items" icon="bell" color="rose" />
         </div>
 
         <div className={`${panelClass} animate-in overflow-hidden border-none shadow-2xl stagger-1`}>
@@ -428,7 +514,7 @@ function OverviewTab({
               </div>
             ) : (
               nextTasks.map((task) => (
-                <div key={task.id} className="group grid gap-6 px-8 py-6 transition-all hover:bg-zinc-50/80 dark:hover:bg-zinc-950/80 md:grid-cols-[1fr_160px_140px]">
+                <div key={task.id} className="group grid gap-6 px-8 py-6 transition-all premium-row-hover md:grid-cols-[1fr_160px_140px]">
                   <div className="min-w-0">
                     <div className="flex items-center gap-3">
                       <p className="text-lg font-bold text-zinc-900 transition-colors group-hover:text-black dark:text-white dark:group-hover:text-white">{task.title || task.taskName}</p>
@@ -448,7 +534,7 @@ function OverviewTab({
                        <span className="text-[10px] font-black uppercase tracking-tighter text-zinc-400">Velocity</span>
                        <span className="text-[10px] font-black text-zinc-900 dark:text-white">{progressForStatus(task.status)}%</span>
                     </div>
-                    <ProgressBar value={progressForStatus(task.status)} />
+                    <ProgressBar value={progressForStatus(task.status)} tone={normalizeTaskStatus(task.status) === "Completed" ? "emerald" : isOverdue(task) ? "rose" : "sky"} />
                   </div>
                 </div>
               ))
@@ -487,7 +573,7 @@ function OverviewTab({
                     <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Workspace Health</span>
                     <span className="text-sm font-black text-zinc-900 dark:text-white">{progress}%</span>
                   </div>
-                  <ProgressBar value={progress} tone="bg-zinc-950 dark:bg-white" />
+                  <ProgressBar value={progress} tone={progress === 100 ? "emerald" : progress > 60 ? "sky" : progress > 30 ? "amber" : "rose"} />
                 </div>
               </button>
             );
@@ -537,54 +623,60 @@ function ProjectsTab({
         const completed = projectTasks.filter((task) => normalizeTaskStatus(task.status) === "Completed").length;
         const progress = projectTasks.length ? Math.round((completed / projectTasks.length) * 100) : project.status === "Completed" ? 100 : 0;
 
+        const progressTone = progress === 100 ? "emerald" : progress > 60 ? "sky" : progress > 30 ? "amber" : "rose";
+
         return (
           <div key={project.id} className={classNames(panelClass, "animate-in flex flex-col p-8 stagger-" + (idx % 5 + 1))}>
-            <div className="flex items-start justify-between">
-              <div className="min-w-0">
-                <div className="flex items-center gap-3">
-                   <TaskStatusBadge status={project.status} />
-                   <PriorityBadge priority={project.priority} />
-                </div>
-                <h3 className="mt-4 text-2xl font-black tracking-tight text-zinc-900 dark:text-white">{project.name}</h3>
-                <p className="mt-1 text-sm font-bold text-zinc-500">{project.code || "Project Code"} • {project.department || "General"}</p>
-              </div>
-            </div>
-
-            <p className="mt-6 line-clamp-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-              {project.description || "Project details and resources are accessible based on your current assignment credentials."}
-            </p>
-
-            <div className="mt-10 grid grid-cols-3 gap-4">
-              <div className={classNames(compactPanelClass, "p-4 text-center")}>
-                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Tasks</p>
-                <p className="mt-2 text-lg font-black text-zinc-900 dark:text-white">{projectTasks.length}</p>
-              </div>
-              <div className={classNames(compactPanelClass, "p-4 text-center")}>
-                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Deadline</p>
-                <p className="mt-2 text-[10px] font-black text-zinc-900 dark:text-white">{formatDate(project.endDate)}</p>
-              </div>
-              <div className={classNames(compactPanelClass, "p-4 text-center")}>
-                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Team</p>
-                <p className="mt-2 text-lg font-black text-zinc-900 dark:text-white">{project.teamSize || project.teamMemberIds.length || 1}</p>
-              </div>
-            </div>
-
-            <div className="mt-10">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{completed} / {projectTasks.length} Complete</span>
-                <span className="text-sm font-black text-zinc-900 dark:text-white">{progress}%</span>
-              </div>
-              <ProgressBar value={progress} tone="bg-zinc-900 dark:bg-white" />
-            </div>
-
-            <div className="mt-auto pt-8 flex items-center justify-between">
-               <div className="flex -space-x-3">
-                  {[1,2,3].map(i => (
-                    <div key={i} className="h-8 w-8 rounded-full border-2 border-white bg-zinc-200 dark:border-black dark:bg-zinc-800 flex items-center justify-center text-[10px] font-bold">
-                       {String.fromCharCode(64 + i)}
+                <div className="flex items-start justify-between">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-3">
+                       <TaskStatusBadge status={project.status} />
+                       <PriorityBadge priority={project.priority} />
                     </div>
-                  ))}
-               </div>
+                    <h3 className="mt-4 text-2xl font-black tracking-tight text-zinc-900 dark:text-white">{project.name}</h3>
+                    <p className="mt-1 text-sm font-bold text-zinc-500">{project.code || "Project Code"} • {project.department || "General"}</p>
+                  </div>
+                </div>
+
+                <p className="mt-6 line-clamp-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+                  {project.description || "Project details and resources are accessible based on your current assignment credentials."}
+                </p>
+
+                <div className="mt-10 grid grid-cols-3 gap-4">
+                  <div className={classNames(compactPanelClass, "p-4 text-center")}>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Tasks</p>
+                    <p className="mt-2 text-lg font-black text-zinc-900 dark:text-white">{projectTasks.length}</p>
+                  </div>
+                  <div className={classNames(compactPanelClass, "p-4 text-center")}>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Deadline</p>
+                    <p className="mt-2 text-[10px] font-black text-zinc-900 dark:text-white">{formatDate(project.endDate)}</p>
+                  </div>
+                  <div className={classNames(compactPanelClass, "p-4 text-center")}>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Team</p>
+                    <p className="mt-2 text-lg font-black text-zinc-900 dark:text-white">{project.teamSize || project.teamMemberIds.length || 1}</p>
+                  </div>
+                </div>
+
+                <div className="mt-10">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{completed} / {projectTasks.length} Complete</span>
+                    <span className="text-sm font-black text-zinc-900 dark:text-white">{progress}%</span>
+                  </div>
+                  <ProgressBar value={progress} tone={progressTone} />
+                </div>
+
+                <div className="mt-auto pt-8 flex items-center justify-between">
+                   <div className="flex -space-x-2">
+                      {[
+                        "bg-gradient-to-br from-indigo-500 to-purple-600 text-white",
+                        "bg-gradient-to-br from-pink-500 to-rose-600 text-white",
+                        "bg-gradient-to-br from-emerald-400 to-teal-600 text-white",
+                      ].map((grad, i) => (
+                        <div key={i} className={`h-8 w-8 rounded-full border-2 border-white dark:border-zinc-950 flex items-center justify-center text-[10px] font-black shadow-sm ${grad}`}>
+                           {String.fromCharCode(65 + i)}
+                        </div>
+                      ))}
+                   </div>
                <button
                 type="button"
                 onClick={() => onOpenProject(project)}
@@ -797,7 +889,7 @@ function ActivityTab({ activity }: { activity: ActivityEvent[] }) {
       <div className="mt-12 space-y-2">
         {activity.map((item, index) => (
           <div key={item.id} className="activity-item-premium">
-             <div className="activity-dot-premium" style={{ backgroundColor: item.tone === 'rose' ? '#f43f5e' : item.tone === 'emerald' ? '#10b981' : item.tone === 'amber' ? '#f59e0b' : '#000' }} />
+             <div className={classNames("activity-dot-premium", `activity-dot-${item.tone || 'zinc'}`)} />
              <div className="animate-in stagger-1">
                 <p className="text-xl font-black text-zinc-900 dark:text-white">{item.title}</p>
                 <p className="mt-2 text-lg leading-relaxed text-zinc-500 dark:text-zinc-400">{item.description}</p>
@@ -913,7 +1005,9 @@ export const MyAssignmentsPage = ({ user }: { user: AuthUser }) => {
   }
 
   return (
-    <section className="assignments-page space-y-10 pb-20">
+    <section className="assignments-page relative space-y-10 pb-20">
+      <div className="assignments-bg-glow-1" />
+      <div className="assignments-bg-glow-2" />
       <WorkspacePageHero title="My Assignments">
         <WorkspaceHeroMeta primary={`${activeProjectsCount} Strategic Projects`} secondary={`${openTasksCount} Active Commitments`} />
       </WorkspacePageHero>
@@ -935,7 +1029,7 @@ export const MyAssignmentsPage = ({ user }: { user: AuthUser }) => {
 
       {/* Dynamic Filter Bar */}
       {(tab === "tasks" || tab === "projects" || tab === "files" || tab === "board") && (
-        <div className="animate-in flex flex-wrap items-center justify-between gap-6 rounded-3xl border border-zinc-200/50 bg-white/40 p-6 backdrop-blur-2xl dark:border-zinc-800/50 dark:bg-black/40">
+        <div className="animate-in flex flex-wrap items-center justify-between gap-6 filters-panel-premium p-6">
           <div className="flex flex-1 flex-wrap items-center gap-4">
             {(tab === "tasks" || tab === "files" || tab === "board") && (
               <div className="search-container-premium min-w-[300px]">

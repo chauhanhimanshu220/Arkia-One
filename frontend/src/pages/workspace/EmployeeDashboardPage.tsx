@@ -12,8 +12,9 @@ import type { AuthUser } from "../../types/auth";
 import type { LeaveRequest } from "../../types/leave";
 import type { DailyTimesheet, TaskItem } from "../../types/task";
 import type { TimesheetWeekRecord } from "../../types/timesheet";
+import "./EmployeeDashboardPage.css";
 
-const colors = ["#09090b", "#06b6d4", "#22c55e", "#f59e0b", "#f43f5e"];
+const colors = ["#818cf8", "#06b6d4", "#22c55e", "#f59e0b", "#f43f5e"];
 
 const dateOnly = (value: string | Date) => {
   if (value instanceof Date) return new Date(value.getFullYear(), value.getMonth(), value.getDate());
@@ -52,11 +53,11 @@ const taskStatus = (status?: string) => {
 
 const pillClass = (status: string) => {
   const value = status.toLowerCase();
-  if (value.includes("approved") || value.includes("done")) return "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200";
-  if (value.includes("submitted") || value.includes("review")) return "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-200";
-  if (value.includes("rejected") || value.includes("missing") || value.includes("overdue")) return "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-200";
-  if (value.includes("progress")) return "bg-sky-100 text-zinc-700 dark:bg-sky-500/15 dark:text-zinc-300";
-  return "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200";
+  if (value.includes("approved") || value.includes("done")) return "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200/40 dark:border-emerald-500/20";
+  if (value.includes("submitted") || value.includes("review")) return "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-500 border border-amber-200/40 dark:border-amber-500/20";
+  if (value.includes("rejected") || value.includes("missing") || value.includes("overdue")) return "bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-500 border border-rose-200/40 dark:border-rose-500/20";
+  if (value.includes("progress")) return "bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400 border border-sky-200/40 dark:border-sky-500/20";
+  return "bg-zinc-100 text-zinc-600 dark:bg-zinc-800/40 dark:text-zinc-400 border border-zinc-200/50 dark:border-zinc-700/30";
 };
 
 const greeting = () => {
@@ -76,24 +77,119 @@ const donutGradient = (segments: Array<{ percentage: number; color: string }>) =
   return `conic-gradient(${stops.join(", ") || "#e2e8f0 0% 100%"})`;
 };
 
-const heroClass =
-  "text-zinc-900 dark:text-white";
+const heroClass = "text-zinc-900 dark:text-white";
 
-const KpiCard = ({ title, value, icon, href }: { title: string; value: string; note: string; icon: IconName; href?: string }) => {
-  const card = (
-    <div className="rounded-l-none rounded-r-[1.5rem] border border-zinc-200/80 border-l-[4px] border-l-[#378ADD] bg-white/90 p-5 transition hover:-translate-y-0.5 dark:border-zinc-800 dark:border-l-[#378ADD] dark:bg-black/85">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">{title}</p>
-          <p className="mt-3 text-3xl font-bold text-[#185FA5] dark:text-[#B5D4F4]">{value}</p>
-        </div>
-        <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-3 text-zinc-700 dark:text-zinc-300 dark:border-zinc-700 dark:bg-black dark:text-zinc-400 dark:text-zinc-500">
-          <Icon name={icon} className="h-5 w-5" />
-        </div>
-      </div>
+const alertToneStyles = {
+  danger: {
+    border: "border-rose-500/25 bg-rose-500/5 hover:border-rose-500/35 hover:shadow-[0_0_20px_rgba(244,63,94,0.12)]",
+    text: "text-rose-600 dark:text-rose-400",
+  },
+  warning: {
+    border: "border-amber-500/25 bg-amber-500/5 hover:border-amber-500/35 hover:shadow-[0_0_20px_rgba(245,158,11,0.12)]",
+    text: "text-amber-600 dark:text-amber-500",
+  },
+  info: {
+    border: "border-indigo-500/20 bg-indigo-500/5 hover:border-indigo-500/30 hover:shadow-[0_0_20px_rgba(99,102,241,0.1)]",
+    text: "text-indigo-600 dark:text-indigo-400",
+  },
+  success: {
+    border: "border-emerald-500/20 bg-emerald-500/5 hover:border-emerald-500/30 hover:shadow-[0_0_20px_rgba(16,185,129,0.1)]",
+    text: "text-emerald-600 dark:text-emerald-500",
+  },
+} as const;
+
+function ProgressBar({ value, tone }: { value: number; tone?: "sky" | "amber" | "emerald" | "rose" | string }) {
+  const clamped = Math.max(0, Math.min(100, Math.round(value)));
+  let fillClass = "progress-fill-premium";
+  if (tone === "emerald") fillClass = "progress-fill-premium progress-fill-emerald";
+  else if (tone === "rose") fillClass = "progress-fill-premium progress-fill-rose";
+  else if (tone === "amber") fillClass = "progress-fill-premium progress-fill-amber";
+  else if (tone === "sky") fillClass = "progress-fill-premium progress-fill-sky";
+  else if (typeof tone === "string" && tone.includes("bg-")) fillClass = `progress-fill-premium ${tone}`;
+
+  return (
+    <div className="progress-bar-premium">
+      <div className={fillClass} style={{ width: `${clamped}%` }} />
     </div>
   );
-  return href ? <Link to={href}>{card}</Link> : card;
+}
+
+const KpiCard = ({
+  title,
+  value,
+  note,
+  icon,
+  color,
+  href,
+}: {
+  title: string;
+  value: string;
+  note: string;
+  icon: IconName;
+  color: "sky" | "amber" | "indigo" | "rose" | "emerald" | "zinc";
+  href?: string;
+}) => {
+  const cardColors = {
+    indigo: {
+      border: "border-indigo-500/25 dark:border-indigo-500/10",
+      iconBg: "bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400",
+      value: "text-indigo-600 dark:text-indigo-400",
+      glow: "hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.15)] hover:border-indigo-500/30",
+    },
+    emerald: {
+      border: "border-emerald-500/25 dark:border-emerald-500/10",
+      iconBg: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400",
+      value: "text-emerald-600 dark:text-emerald-400",
+      glow: "hover:shadow-[0_0_30px_-5px_rgba(16,185,129,0.15)] hover:border-emerald-500/30",
+    },
+    sky: {
+      border: "border-sky-500/25 dark:border-sky-500/10",
+      iconBg: "bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400",
+      value: "text-sky-600 dark:text-sky-400",
+      glow: "hover:shadow-[0_0_30px_-5px_rgba(56,189,248,0.15)] hover:border-sky-500/30",
+    },
+    rose: {
+      border: "border-rose-500/25 dark:border-rose-500/10",
+      iconBg: "bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400",
+      value: "text-rose-600 dark:text-rose-400",
+      glow: "hover:shadow-[0_0_30px_-5px_rgba(244,63,94,0.15)] hover:border-rose-500/30",
+    },
+    amber: {
+      border: "border-amber-500/25 dark:border-amber-500/10",
+      iconBg: "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400",
+      value: "text-amber-600 dark:text-amber-400",
+      glow: "hover:shadow-[0_0_30px_-5px_rgba(245,158,11,0.15)] hover:border-amber-500/30",
+    },
+    zinc: {
+      border: "border-zinc-200/25 dark:border-zinc-800/10",
+      iconBg: "bg-zinc-100 text-zinc-650 dark:bg-zinc-800/20 dark:text-zinc-400",
+      value: "text-zinc-700 dark:text-zinc-300",
+      glow: "hover:shadow-[0_0_30px_-5px_rgba(113,113,122,0.1)] hover:border-zinc-300/30",
+    },
+  };
+
+  const selected = cardColors[color];
+
+  const card = (
+    <article className={`relative h-full overflow-hidden rounded-[2rem] border ${selected.border} bg-white/70 dark:bg-zinc-950/40 p-5 backdrop-blur-xl shadow-sm transition-all duration-300 hover:-translate-y-1 ${selected.glow}`}>
+      <div className="relative flex flex-col gap-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">{title}</p>
+            <p className={`mt-3 text-3xl font-extrabold tracking-tight ${selected.value}`}>
+              {value}
+            </p>
+          </div>
+          <div className={`rounded-2xl border border-transparent ${selected.iconBg} p-3 shadow-sm`}>
+            <Icon name={icon} className="h-5 w-5" />
+          </div>
+        </div>
+        <p className="text-xs font-medium text-zinc-500 dark:text-zinc-500 leading-normal">{note}</p>
+      </div>
+    </article>
+  );
+
+  return href ? <Link to={href} className="block h-full">{card}</Link> : card;
 };
 
 export const EmployeeDashboardPage = ({ user }: { user: AuthUser }) => {
@@ -237,96 +333,248 @@ export const EmployeeDashboardPage = ({ user }: { user: AuthUser }) => {
   const workdayStatus = today.getDay() === 0 ? "Weekly Off" : leaveDates.has(todayIso) ? "On Leave Today" : "Working Day";
 
   return (
-    <section className="space-y-6">
-      <div className={heroClass}>
+    <div className="dashboard-page space-y-6">
+      <div className="dashboard-bg-glow-1" />
+      <div className="dashboard-bg-glow-2" />
+
+      <section className={heroClass}>
         <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">{greeting()}, {user.fullName.split(" ")[0]}</h2>
+            <h2 className="text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-white">{greeting()}, {user.fullName.split(" ")[0]}</h2>
             <div className="mt-4 flex flex-wrap gap-3 text-sm">
-              <span className="rounded-2xl border border-zinc-200 bg-white/85 px-4 py-2 text-zinc-600 shadow-sm dark:border-zinc-700 dark:bg-black/60 dark:text-zinc-300">{formatDate(today, { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}</span>
-              <span className="rounded-2xl bg-emerald-50 px-4 py-2 font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-200">{workdayStatus}</span>
-              <span className={`rounded-2xl px-4 py-2 font-semibold ${pillClass(weekStatus)}`}>{weekStatus}</span>
+              <span className="rounded-2xl border border-zinc-200/80 bg-white/40 backdrop-blur-md px-4 py-2 text-zinc-650 shadow-sm dark:border-zinc-700/50 dark:bg-black/60 dark:text-zinc-300">{formatDate(today, { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}</span>
+              <span className="rounded-2xl bg-emerald-50 px-4 py-2 font-bold text-emerald-700 border border-emerald-200/30 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">{workdayStatus}</span>
+              <span className={`rounded-2xl px-4 py-2 font-bold ${pillClass(weekStatus)}`}>{weekStatus}</span>
             </div>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Link to={workspaceRoutes["my-timesheet"].path} className="inline-flex h-12 items-center justify-center rounded-2xl bg-black px-5 text-sm font-semibold text-white dark:text-black transition hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200">Fill Timesheet</Link>
-            <button type="button" className="inline-flex h-12 items-center justify-center rounded-2xl border border-zinc-200 bg-white/90 px-5 text-sm font-semibold text-zinc-700 transition hover:bg-white dark:border-zinc-700 dark:bg-black/60 dark:text-zinc-200">Start Timer</button>
-            <Link to={workspaceRoutes["timesheet-history"].path} className="inline-flex h-12 items-center justify-center rounded-2xl border border-zinc-200 bg-white/90 px-5 text-sm font-semibold text-zinc-700 transition hover:bg-white dark:border-zinc-700 dark:bg-black/60 dark:text-zinc-200">View History</Link>
+            <Link to={workspaceRoutes["my-timesheet"].path} className="inline-flex h-12 items-center justify-center rounded-2xl bg-zinc-950 text-white dark:bg-white dark:text-black hover:bg-black dark:hover:bg-zinc-100 px-5 text-sm font-bold transition hover:-translate-y-0.5 shadow-md">Fill Timesheet</Link>
+            <button type="button" className="inline-flex h-12 items-center justify-center rounded-2xl border border-zinc-200 bg-white/60 backdrop-blur-md px-5 text-sm font-semibold text-zinc-700 transition hover:bg-white dark:border-zinc-700 dark:bg-zinc-900/60 dark:text-zinc-200 hover:-translate-y-0.5 shadow-sm">Start Timer</button>
+            <Link to={workspaceRoutes["timesheet-history"].path} className="inline-flex h-12 items-center justify-center rounded-2xl border border-zinc-200 bg-white/60 backdrop-blur-md px-5 text-sm font-semibold text-zinc-700 transition hover:bg-white dark:border-zinc-700 dark:bg-zinc-900/60 dark:text-zinc-200 hover:-translate-y-0.5 shadow-sm">View History</Link>
           </div>
         </div>
-      </div>
+      </section>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
-        <KpiCard title="Today Logged" value={formatHours(todayLogged)} note={`${Math.max(0, DAY_HOURS - todayLogged).toFixed(1).replace(".0", "")}h remaining`} icon="clock" href={workspaceRoutes["my-timesheet"].path} />
-        <KpiCard title="Weekly Total" value={`${formatHours(weekLogged)} / ${WEEK_HOURS}h`} note={`${completion}% completed`} icon="dashboard" href={workspaceRoutes["timesheet-history"].path} />
-        <KpiCard title="Missing Days" value={`${missingDays.length}`} note={missingDays.length > 0 ? missingDays.map((day) => day.label).join(", ") : "No missing day"} icon="timesheet" href={workspaceRoutes["my-timesheet"].path} />
-        <KpiCard title="Pending Approval" value={formatHours(pendingApprovalHours)} note={pendingApprovalHours > 0 ? "Waiting with manager / HR" : "Nothing pending"} icon="approvals" href={workspaceRoutes["timesheet-history"].path} />
-        <KpiCard title="Rejected Entries" value={`${rejectedEntries}`} note={rejectedEntries > 0 ? "Needs correction" : "No rejections"} icon="inbox" href={workspaceRoutes["timesheet-history"].path} />
-        <KpiCard title="Active Tasks" value={`${activeTasks.length}`} note={`${activeProjects.length} active project(s)`} icon="projects" href={workspaceRoutes["my-timesheet"].path} />
+        <KpiCard title="Today Logged" value={formatHours(todayLogged)} note={`${Math.max(0, DAY_HOURS - todayLogged).toFixed(1).replace(".0", "")}h remaining`} icon="clock" href={workspaceRoutes["my-timesheet"].path} color="indigo" />
+        <KpiCard title="Weekly Total" value={`${formatHours(weekLogged)} / ${WEEK_HOURS}h`} note={`${completion}% completed`} icon="dashboard" href={workspaceRoutes["timesheet-history"].path} color="emerald" />
+        <KpiCard title="Missing Days" value={`${missingDays.length}`} note={missingDays.length > 0 ? missingDays.map((day) => day.label).join(", ") : "No missing day"} icon="timesheet" href={workspaceRoutes["my-timesheet"].path} color="rose" />
+        <KpiCard title="Pending Approval" value={formatHours(pendingApprovalHours)} note={pendingApprovalHours > 0 ? "Waiting with manager / HR" : "Nothing pending"} icon="approvals" href={workspaceRoutes["timesheet-history"].path} color="sky" />
+        <KpiCard title="Rejected Entries" value={`${rejectedEntries}`} note={rejectedEntries > 0 ? "Needs correction" : "No rejections"} icon="inbox" href={workspaceRoutes["timesheet-history"].path} color="amber" />
+        <KpiCard title="Active Tasks" value={`${activeTasks.length}`} note={`${activeProjects.length} active project(s)`} icon="projects" href={workspaceRoutes["my-timesheet"].path} color="zinc" />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.35fr_0.85fr]">
-        <section className="rounded-[1.5rem] border border-zinc-200/80 bg-zinc-50/80 p-6 dark:border-zinc-800 dark:bg-black/50">
+        <section className="dashboard-panel-premium p-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <div><h3 className="text-xl font-bold text-zinc-900 dark:text-white">Mon to Sat effort</h3></div>
-            <span className="rounded-full bg-zinc-100 px-4 py-2 text-sm font-semibold text-zinc-700">{formatHours(weekLogged)} logged</span>
+            <div className="flex items-center gap-2">
+              <Icon name="clock" className="h-5 w-5 text-indigo-500" />
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Mon to Sat effort</h3>
+            </div>
+            <span className="rounded-full border border-zinc-200 bg-white/40 backdrop-blur-md px-4 py-1.5 text-xs font-bold text-zinc-700 dark:border-white/5 dark:bg-zinc-950/40 dark:text-zinc-300">{formatHours(weekLogged)} logged</span>
           </div>
-          <div className="mt-6 flex h-[300px] items-end gap-4 rounded-l-none rounded-r-[1.5rem] border border-zinc-200/80 border-l-[4px] border-l-[#378ADD] bg-zinc-50/80 p-5 dark:border-zinc-800 dark:border-l-[#378ADD] dark:bg-black/70">
+          <div className="chart-container-premium mt-6 flex h-[300px] items-end gap-4 p-5">
             {weeklyHours.map((day) => (
               <Link key={day.date} to={workspaceRoutes["my-timesheet"].path} className="group flex flex-1 flex-col items-center gap-3">
-                <div className="relative flex h-52 w-full items-end rounded-2xl bg-white px-2 py-2 dark:bg-black">
-                  <div className="absolute left-2 right-2 top-2/4 border-t border-dashed border-zinc-300" />
-                  <div className={`w-full rounded-t-2xl transition group-hover:brightness-95 ${day.isToday ? "bg-zinc-950 dark:bg-white" : day.logged >= DAY_HOURS ? "bg-emerald-500" : day.logged > 0 ? "bg-zinc-100 dark:bg-white/10" : "bg-zinc-300"}`} style={{ height: `${Math.max(4, Math.min(100, (day.logged / DAY_HOURS) * 100))}%` }} />
+                <div className="relative flex h-52 w-full items-end rounded-2xl bg-white/40 dark:bg-black/40 border border-zinc-200/30 dark:border-zinc-800/30 px-2 py-2">
+                  <div className="absolute left-2 right-2 top-2/4 border-t border-dashed border-zinc-300/40 dark:border-zinc-700/40" />
+                  <div className={`w-full rounded-t-2xl transition group-hover:brightness-95 ${day.isToday ? "bg-indigo-500" : day.logged >= DAY_HOURS ? "bg-emerald-500" : day.logged > 0 ? "bg-indigo-400/60" : "bg-zinc-300/60 dark:bg-zinc-800/60"}`} style={{ height: `${Math.max(4, Math.min(100, (day.logged / DAY_HOURS) * 100))}%` }} />
                 </div>
-                <div className="text-center"><p className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">{day.label}</p><p className="mt-1 text-xs text-[#185FA5] dark:text-[#B5D4F4]">{formatHours(day.logged)}</p></div>
+                <div className="text-center">
+                  <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">{day.label}</p>
+                  <p className="mt-1 text-[11px] font-bold text-indigo-600 dark:text-indigo-400">{formatHours(day.logged)}</p>
+                </div>
               </Link>
             ))}
           </div>
         </section>
 
-        <section className="rounded-[1.5rem] border border-zinc-200/80 bg-zinc-50/80 p-6 dark:border-zinc-800 dark:bg-black/50">
-          <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Project split</h3>
+        <section className="dashboard-panel-premium p-6">
+          <div className="flex items-center gap-2">
+            <Icon name="projects" className="h-5 w-5 text-indigo-500" />
+            <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Project split</h3>
+          </div>
           {projectAllocation.length > 1 ? (
             <>
-              <div className="mx-auto mt-6 flex h-52 w-52 items-center justify-center rounded-full" style={{ background: donutGradient(projectAllocation) }}>
-                <div className="flex h-32 w-32 flex-col items-center justify-center rounded-full bg-white text-center shadow-inner dark:bg-black"><p className="text-3xl font-bold text-[#185FA5] dark:text-[#B5D4F4]">{formatHours(weekLogged)}</p><p className="text-xs text-[#185FA5] dark:text-[#B5D4F4]">logged</p></div>
+              <div className="mx-auto mt-6 flex h-52 w-52 items-center justify-center rounded-full shadow-lg" style={{ background: donutGradient(projectAllocation) }}>
+                <div className="flex h-32 w-32 flex-col items-center justify-center rounded-full bg-white/95 dark:bg-zinc-950/95 text-center shadow-inner backdrop-blur-md">
+                  <p className="text-3xl font-black text-indigo-600 dark:text-indigo-400">{formatHours(weekLogged)}</p>
+                  <p className="text-[10px] uppercase font-black tracking-wider text-zinc-400">logged</p>
+                </div>
               </div>
-              <div className="mt-6 space-y-3">{projectAllocation.map((item) => <div key={item.name} className="flex items-center justify-between gap-3 text-sm"><span className="flex items-center gap-2 text-zinc-600 dark:text-zinc-300"><span className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />{item.name}</span><span className="font-semibold text-[#185FA5] dark:text-[#B5D4F4]">{Math.round(item.percentage)}%</span></div>)}</div>
+              <div className="mt-6 space-y-3">
+                {projectAllocation.map((item) => (
+                  <div key={item.name} className="flex items-center justify-between gap-3 text-xs">
+                    <span className="flex items-center gap-2 text-zinc-600 dark:text-zinc-300">
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                      <span className="font-semibold">{item.name}</span>
+                    </span>
+                    <span className="font-black text-indigo-600 dark:text-indigo-400">{Math.round(item.percentage)}%</span>
+                  </div>
+                ))}
+              </div>
             </>
           ) : (
-            <div className="mt-6 rounded-l-none rounded-r-[1.5rem] border border-zinc-200/80 border-l-[4px] border-l-[#378ADD] bg-zinc-50/80 p-8 text-center text-sm text-zinc-500 dark:border-zinc-800 dark:border-l-[#378ADD] dark:bg-black/70 dark:text-zinc-400">No split yet.</div>
+            <div className="chart-container-premium mt-6 flex h-52 items-center justify-center text-center p-8">
+              <div>
+                <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">No project split yet</p>
+                <p className="mt-1 text-xs text-zinc-400">Hours logged to project tasks will show split data.</p>
+              </div>
+            </div>
           )}
         </section>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <section className="rounded-[1.5rem] border border-zinc-200/80 bg-zinc-50/80 p-6 dark:border-zinc-800 dark:bg-black/50">
-          <div className="flex items-center justify-between gap-4"><div><h3 className="text-xl font-bold text-zinc-900 dark:text-white">My work</h3></div><Link to={workspaceRoutes["my-timesheet"].path} className="rounded-2xl bg-black px-4 py-2 text-sm font-semibold text-white dark:text-black dark:bg-white dark:text-black">Log Time</Link></div>
+        <section className="dashboard-panel-premium p-6">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <Icon name="approvals" className="h-5 w-5 text-indigo-500" />
+              <h3 className="text-lg font-bold text-zinc-900 dark:text-white">My Work</h3>
+            </div>
+            <Link to={workspaceRoutes["my-timesheet"].path} className="rounded-full bg-zinc-950 hover:bg-black text-white dark:bg-white dark:text-black dark:hover:bg-zinc-100 px-4 py-1.5 text-xs font-bold transition hover:-translate-y-0.5 shadow-md">Log Time</Link>
+          </div>
           <div className="mt-5 space-y-4">
             {activeTasks.length > 0 ? activeTasks.slice(0, 5).map((task) => {
               const spent = currentWeek?.rows.filter((row) => row.taskName === task.title || row.projectId === task.projectId).reduce((sum, row) => sum + Object.values(row.hours).reduce((rowSum, hours) => rowSum + Number(hours || 0), 0), 0) ?? 0;
               const progress = task.totalHours > 0 ? Math.min(100, Math.round((spent / task.totalHours) * 100)) : 0;
               const dueDate = task.endDate ? dateOnly(task.endDate) : null;
               const due = !dueDate ? "No due date" : dueDate < today ? "Overdue" : isoDate(dueDate) === todayIso ? "Due today" : `Due ${formatDate(dueDate, { day: "2-digit", month: "short" })}`;
-              return <div key={task.id} className="rounded-l-none rounded-r-[1.5rem] border border-zinc-200/80 border-l-[4px] border-l-[#378ADD] bg-zinc-50/80 p-4 dark:border-zinc-800 dark:border-l-[#378ADD] dark:bg-black/70"><div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between"><div><p className="font-semibold text-zinc-900 dark:text-white">{task.title}</p><p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{task.projectName || "Project"} · {due}</p></div><span className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${pillClass(taskStatus(task.status))}`}>{taskStatus(task.status)}</span></div><div className="mt-4 flex items-center justify-between text-sm text-zinc-500"><span><span className="text-[#185FA5] dark:text-[#B5D4F4]">{formatHours(spent)}</span> spent</span><span><span className="text-[#185FA5] dark:text-[#B5D4F4]">{formatHours(task.totalHours)}</span> planned</span></div><div className="mt-2 h-2 rounded-full bg-zinc-200 dark:bg-zinc-900"><div className="h-full rounded-full bg-zinc-950 dark:bg-white" style={{ width: `${progress}%` }} /></div></div>;
-            }) : <div className="rounded-l-none rounded-r-[1.5rem] border border-zinc-200/80 border-l-[4px] border-l-[#378ADD] bg-zinc-50/80 p-10 text-center text-sm text-zinc-500 dark:border-zinc-800 dark:border-l-[#378ADD] dark:bg-black/70 dark:text-zinc-400">No active tasks.</div>}
+              
+              const statusName = taskStatus(task.status);
+              const progressTone = statusName === "Done" ? "emerald" : statusName === "In Progress" ? "sky" : "amber";
+
+              return (
+                <div key={task.id} className="rounded-2xl border border-zinc-200/60 dark:border-zinc-800/40 bg-zinc-50/40 dark:bg-zinc-950/20 p-4 backdrop-blur-md transition-all duration-300 hover:shadow-[0_0_20px_rgba(99,102,241,0.08)] hover:border-indigo-500/20">
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <p className="font-bold text-zinc-900 dark:text-white">{task.title}</p>
+                      <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">{task.projectName || "Project"} · {due}</p>
+                    </div>
+                    <span className={`w-fit rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider ${pillClass(statusName)}`}>
+                      {statusName}
+                    </span>
+                  </div>
+                  <div className="mt-4 flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+                    <span>Spent: <span className="font-bold text-indigo-600 dark:text-indigo-400">{formatHours(spent)}</span></span>
+                    <span>Planned: <span className="font-bold text-zinc-700 dark:text-zinc-300">{formatHours(task.totalHours)}</span></span>
+                  </div>
+                  <div className="mt-2.5">
+                    <ProgressBar value={progress} tone={progressTone} />
+                  </div>
+                </div>
+              );
+            }) : (
+              <div className="chart-container-premium p-10 text-center">
+                <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">No active tasks</p>
+                <p className="mt-1 text-xs text-zinc-400">All tasks completed or none assigned.</p>
+              </div>
+            )}
           </div>
         </section>
 
-        <section className="rounded-[1.5rem] border border-zinc-200/80 bg-zinc-50/80 p-6 dark:border-zinc-800 dark:bg-black/50">
-          <h3 className="text-xl font-bold text-zinc-900 dark:text-white">Needs action</h3>
-          <div className="mt-5 space-y-4">{visibleAlerts.map((alert) => { const tone = alert.tone === "danger" ? "border-rose-200 bg-rose-50 text-rose-700" : alert.tone === "warning" ? "border-amber-200 bg-amber-50 text-amber-700" : alert.tone === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/80 dark:bg-black/70 text-zinc-700 dark:text-zinc-300"; const content = <div className={`rounded-l-none rounded-r-[1.5rem] border border-zinc-200/80 border-l-[4px] border-l-[#378ADD] dark:border-zinc-800 dark:border-l-[#378ADD] p-4 ${tone}`}><p className="font-semibold">{alert.title}</p></div>; return "href" in alert && alert.href ? <Link key={alert.title} to={alert.href}>{content}</Link> : <div key={alert.title}>{content}</div>; })}</div>
-          <div className="mt-6 rounded-l-none rounded-r-[1.5rem] border border-zinc-200/80 border-l-[4px] border-l-[#378ADD] bg-zinc-50/80 p-4 dark:border-zinc-800 dark:border-l-[#378ADD] dark:bg-black/70"><div className="grid grid-cols-7 gap-2">{Array.from({ length: 7 }, (_, index) => { const date = addDays(today, index - 6); const key = isoDate(date); const status = currentWeek?.status === "Rejected" ? "Rejected" : leaveDates.has(key) ? "Leave" : hoursForDate(key) === 0 && date <= today ? "Missing" : currentWeek?.status === "Approved" ? "Approved" : currentWeek?.status === "Submitted" ? "Submitted" : hoursForDate(key) > 0 ? "Draft" : "Upcoming"; return <div key={key} className="text-center"><div className={`mx-auto h-9 rounded-xl ${pillClass(status)}`} title={`${formatDate(date, { weekday: "short" })}: ${status}`} /><p className="mt-2 text-xs font-semibold text-zinc-500">{formatDate(date, { weekday: "short" })}</p></div>; })}</div></div>
+        <section className="dashboard-panel-premium p-6">
+          <div className="flex items-center gap-2">
+            <Icon name="shield" className="h-5 w-5 text-indigo-500" />
+            <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Needs Action</h3>
+          </div>
+          <div className="mt-5 space-y-4">
+            {visibleAlerts.map((alert) => {
+              const styles = alertToneStyles[alert.tone] ?? alertToneStyles.info;
+              const content = (
+                <div className={`rounded-2xl border ${styles.border} p-4 backdrop-blur-md transition-all duration-300`}>
+                  <p className={`font-bold ${styles.text}`}>{alert.title}</p>
+                  <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{alert.message}</p>
+                </div>
+              );
+              return "href" in alert && alert.href ? (
+                <Link key={alert.title} to={alert.href} className="block transition-transform hover:-translate-y-0.5">
+                  {content}
+                </Link>
+              ) : (
+                <div key={alert.title} className="transition-transform hover:-translate-y-0.5">
+                  {content}
+                </div>
+              );
+            })}
+          </div>
+          <div className="chart-container-premium mt-6">
+            <div className="grid grid-cols-7 gap-2">
+              {Array.from({ length: 7 }, (_, index) => {
+                const date = addDays(today, index - 6);
+                const key = isoDate(date);
+                const status = currentWeek?.status === "Rejected"
+                  ? "Rejected"
+                  : leaveDates.has(key)
+                    ? "Leave"
+                    : hoursForDate(key) === 0 && date <= today
+                      ? "Missing"
+                      : currentWeek?.status === "Approved"
+                        ? "Approved"
+                        : currentWeek?.status === "Submitted"
+                          ? "Submitted"
+                          : hoursForDate(key) > 0
+                            ? "Draft"
+                            : "Upcoming";
+                
+                return (
+                  <div key={key} className="text-center flex flex-col items-center">
+                    <div
+                      className={`h-9 w-9 flex items-center justify-center rounded-xl font-black text-xs ${pillClass(status)} shadow-sm transition hover:scale-105`}
+                      title={`${formatDate(date, { weekday: "short" })}: ${status}`}
+                    >
+                      {formatDate(date, { day: "numeric" })}
+                    </div>
+                    <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-550">
+                      {formatDate(date, { weekday: "short" })}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </section>
       </div>
 
-      <section className="rounded-[1.5rem] border border-zinc-200/80 bg-zinc-50/80 p-6 dark:border-zinc-800 dark:bg-black/50">
-        <div className="flex flex-wrap items-center justify-between gap-4"><div><h3 className="text-xl font-bold text-zinc-900 dark:text-white">Recent activity</h3></div><Link to={workspaceRoutes["timesheet-history"].path} className="rounded-2xl border border-zinc-200 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200">View All</Link></div>
+      <section className="dashboard-panel-premium p-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <Icon name="history" className="h-5 w-5 text-indigo-500" />
+            <h3 className="text-lg font-bold text-zinc-900 dark:text-white">Recent Activity</h3>
+          </div>
+          <Link to={workspaceRoutes["timesheet-history"].path} className="rounded-full border border-zinc-250 bg-white/40 dark:border-zinc-800 dark:bg-zinc-950/40 px-4 py-1.5 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 transition hover:-translate-y-0.5 shadow-sm">View All</Link>
+        </div>
         <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {recentActivity.length > 0 ? recentActivity.map((item) => <div key={item.id} className="rounded-l-none rounded-r-[1.5rem] border border-zinc-200/80 border-l-[4px] border-l-[#378ADD] bg-zinc-50/80 p-4 dark:border-zinc-800 dark:border-l-[#378ADD] dark:bg-black/70"><div className="flex items-start justify-between gap-3"><div><p className="font-semibold text-zinc-900 dark:text-white">{item.title}</p><p className="mt-3 text-xs text-zinc-400">{formatDate(item.timestamp)}</p></div><span className={`rounded-full px-3 py-1 text-xs font-semibold ${pillClass(item.status)}`}>{item.status}</span></div></div>) : <div className="rounded-l-none rounded-r-[1.5rem] border border-zinc-200/80 border-l-[4px] border-l-[#378ADD] bg-zinc-50/80 p-10 text-center text-sm text-zinc-500 dark:border-zinc-800 dark:border-l-[#378ADD] dark:bg-black/70 dark:text-zinc-400 md:col-span-2 xl:col-span-3">No dashboard activity yet. Start by filling today’s timesheet.</div>}
+          {recentActivity.length > 0 ? recentActivity.map((item) => {
+            const isApproved = item.status === "Approved";
+            const isRejected = item.status === "Rejected";
+            const borderGlow = isApproved
+              ? "hover:border-emerald-500/30 hover:shadow-[0_0_15px_rgba(16,185,129,0.15)] border-emerald-500/10 dark:border-emerald-500/5 bg-emerald-50/10 dark:bg-emerald-950/5"
+              : isRejected
+                ? "hover:border-rose-500/30 hover:shadow-[0_0_15px_rgba(244,63,94,0.15)] border-rose-500/10 dark:border-rose-500/5 bg-rose-50/10 dark:bg-rose-950/5"
+                : "hover:border-indigo-500/25 hover:shadow-[0_0_15px_rgba(99,102,241,0.08)] border-zinc-200/60 dark:border-zinc-800/40 bg-zinc-50/40 dark:bg-zinc-950/20";
+            return (
+              <div key={item.id} className={`rounded-2xl border p-4 backdrop-blur-md transition-all duration-300 ${borderGlow}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-bold text-zinc-900 dark:text-white">{item.title}</p>
+                    <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">{item.detail}</p>
+                    <p className="mt-2.5 text-[10px] uppercase font-black tracking-wider text-zinc-400">{formatDate(item.timestamp)}</p>
+                  </div>
+                  <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider ${pillClass(item.status)}`}>
+                    {item.status}
+                  </span>
+                </div>
+              </div>
+            );
+          }) : (
+            <div className="chart-container-premium p-10 text-center md:col-span-2 xl:col-span-3">
+              <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">No dashboard activity yet</p>
+              <p className="mt-1 text-xs text-zinc-400">Start by filling today’s timesheet.</p>
+            </div>
+          )}
         </div>
       </section>
-    </section>
+    </div>
   );
 };
-

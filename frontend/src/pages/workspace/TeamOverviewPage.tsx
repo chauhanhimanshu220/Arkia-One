@@ -129,7 +129,7 @@ export const TeamOverviewPage = ({ user }: { user: AuthUser }) => {
   const teamRecords = useMemo(() => records.filter((record) => teamMemberIds.has(record.userId)), [records, teamMemberIds]);
   const teamLeaves = useMemo(() => leaves.filter((leave) => teamMemberIds.has(leave.employeeId)), [leaves, teamMemberIds]);
   const teamTasks = useMemo(
-    () => tasks.filter((task) => teamProjectIds.has(task.projectId) || teamMemberIds.has(task.assignedTo)),
+    () => tasks.filter((task) => teamProjectIds.has(task.projectId ?? "") || teamMemberIds.has(task.assignedTo)),
     [tasks, teamMemberIds, teamProjectIds],
   );
   const activeProjects = useMemo(() => teamProjects.filter((project) => project.status === "Active"), [teamProjects]);

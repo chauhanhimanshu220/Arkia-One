@@ -243,8 +243,8 @@ function Card({
 
 const mapTaskToRow = (task: TaskItem): TaskRow => ({
   id: task.id,
-  projectId: task.projectId,
-  projectName: task.projectName,
+  projectId: task.projectId ?? "",
+  projectName: task.projectName ?? "",
   taskName: task.title,
   subTaskName: task.description || "No sub-task description",
   status: task.status,

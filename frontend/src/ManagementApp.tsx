@@ -20,7 +20,7 @@ export function ManagementApp() {
   }
 
   // Allow access only if logged in and has the super_admin role (or account_type === 'super_admin')
-  if (!session || (session.user.role !== 'super_admin' && session.user.account_type !== 'super_admin')) {
+  if (!session || ((session.user.role as string) !== 'super_admin' && session.user.account_type !== 'super_admin')) {
     return <Navigate to="/login" replace />;
   }
 
